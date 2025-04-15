@@ -1,6 +1,5 @@
 package com.example.hellokafka.basics;
 
-import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -9,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
+import java.util.stream.IntStream;
 
 public class ProducerCallbackDemo {
 
@@ -25,14 +25,12 @@ public class ProducerCallbackDemo {
         properties.setProperty("key.serializer", StringSerializer.class.getName());
         properties.setProperty("value.serializer", StringSerializer.class.getName());
 
-        // create a record
-        var record = new ProducerRecord<String, String>("demo_java", "hello world!");
-
         try (var producer = new KafkaProducer<String, String>(properties)) {
 
-            // producer.send(record);
-            producer.send(record, ProducerCallbackDemo::onCompletion);
-
+            IntStream.range(0, 10).forEach(i -> {
+                var record = new ProducerRecord<String, String>("demo_java", "hello world! " + i);
+                producer.send(record, ProducerCallbackDemo::onCompletion);
+            });
 
         } catch (Exception e) {
             logger.error(e.getMessage());
