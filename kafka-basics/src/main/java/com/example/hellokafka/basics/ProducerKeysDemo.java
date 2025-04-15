@@ -10,13 +10,15 @@ import org.slf4j.LoggerFactory;
 import java.util.Properties;
 import java.util.stream.IntStream;
 
-public class ProducerCallbackDemo {
+public class ProducerKeysDemo {
 
-    private static final Logger logger = LoggerFactory.getLogger(ProducerCallbackDemo.class.getSimpleName());
-    public static final int MESSAGE_COUNT = 30;
+    private static final String topic = "demo_java";
+    private static final int messageCount = 10;
+
+    private static final Logger logger = LoggerFactory.getLogger(ProducerKeysDemo.class.getSimpleName());
 
     public static void main(String[] args) {
-        logger.info("The basic producer has started!");
+        logger.info("The producer with keys has started!");
 
         var properties = new Properties();
         // connection properties
@@ -26,24 +28,18 @@ public class ProducerCallbackDemo {
         properties.setProperty("key.serializer", StringSerializer.class.getName());
         properties.setProperty("value.serializer", StringSerializer.class.getName());
 
-        // Smaller batch size to provoke switching of partitions!
-        // The default batch size of kafka is 16kb
-        properties.setProperty("batch.size", "400");
-
+        // check the logs to see that messages with the same key go into the same partition!
         try (var producer = new KafkaProducer<String, String>(properties)) {
 
-            IntStream.range(0, 10).forEach(j -> {
+            IntStream.range(0, 3).forEach(r -> {
 
-                IntStream.range(0, MESSAGE_COUNT).forEach(i -> {
-                    var record = new ProducerRecord<String, String>("demo_java", "hello world! " + j + "-" + i);
-                    producer.send(record, ProducerCallbackDemo::onCompletion);
+                IntStream.range(0, messageCount).forEach(i -> {
+                    var record = recordFor("hello world", i);
+                    producer.send(record, (metadata, exception) -> {
+                        onCompletion(metadata, exception, record.key());
+                    });
+                    logger.info("Sent key: {}, value: {}", record.key(), record.value());
                 });
-
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
 
             });
 
@@ -53,18 +49,25 @@ public class ProducerCallbackDemo {
 
     }
 
+    private static ProducerRecord<String, String> recordFor(String message, int i) {
+        var key = "id_" + i;
+        var value = message + " " + i;
+        return new ProducerRecord<>(topic, key, value);
+    }
+
     /**
      * Executed everytime a record was successfully sent or an exception occurred.
      */
-    private static void onCompletion(RecordMetadata metadata, Exception exception) {
+    private static void onCompletion(RecordMetadata metadata, Exception exception, String key) {
 
         if (exception == null) {
-            logger.info("Sent message, Topic: {}, Partition: {}, Offset: {}, Timestamp: {}",
+            logger.info("Got metadata: Topic: {}, Key: {}, Partition: {}, Offset: {}, Timestamp: {}",
                     metadata.topic(),
+                    key,
                     metadata.partition(),
                     metadata.offset(),
                     metadata.timestamp()
-                    );
+            );
         } else {
             logger.error("Error sending message: {}", exception.getMessage());
         }
