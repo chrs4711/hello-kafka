@@ -13,7 +13,7 @@ public class ProducerDemo {
     private static final Logger logger = LoggerFactory.getLogger(ProducerDemo.class.getSimpleName());
 
     public static void main(String[] args) {
-        logger.info("I am started!!1 ");
+        logger.info("The basic producer has started!");
 
         var properties = new Properties();
         // connection properties
