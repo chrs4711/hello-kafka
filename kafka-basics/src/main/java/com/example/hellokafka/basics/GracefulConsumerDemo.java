@@ -1,6 +1,7 @@
 package com.example.hellokafka.basics;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.CooperativeStickyAssignor;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -34,6 +35,8 @@ public class GracefulConsumerDemo {
         // consumer config
         properties.setProperty("key.deserializer", StringDeserializer.class.getName());
         properties.setProperty("value.deserializer", StringDeserializer.class.getName());
+
+        properties.setProperty("partition.assignment.strategy", CooperativeStickyAssignor.class.getName());
 
         properties.setProperty("group.id", groupId);
 
