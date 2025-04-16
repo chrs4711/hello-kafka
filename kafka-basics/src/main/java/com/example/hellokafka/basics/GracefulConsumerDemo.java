@@ -43,7 +43,6 @@ public class GracefulConsumerDemo {
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 public void run() {
                     logger.info("Waking up the consumer");
-                    System.out.println("--------> hello hello hello");
                     consumer.wakeup(); // causes the consumer to throw a wakeup exception
 
                     // join the main thread to allow it to finish. Otherwise, we would just die.
