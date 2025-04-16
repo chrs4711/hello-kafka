@@ -18,16 +18,15 @@ public class WikimediaChangesProducer {
 
     public static void main(String[] args) {
 
-        var url = "https://stream.wikimedia.org/v2/stream/recentchange";
         var myProducer = new MyProducer();
 
-
+        var url = "https://stream.wikimedia.org/v2/stream/recentchange";
         var eventSource = new EventSource.Builder(URI.create(url))
                 .build();
 
         try {
 
-            for (int i = 0; i < 10; i++) {
+            while (true) {
 
                 // pattern matching for switch!!
                 var streamEvent = eventSource.readAnyEvent();
@@ -40,10 +39,12 @@ public class WikimediaChangesProducer {
                 }
             }
 
-            eventSource.close();
-
         } catch (StreamException e) {
             log.error("exception occurred", e);
+            myProducer.closeIt();
+        } finally {
+            eventSource.close();
+            myProducer.closeIt();
         }
 
     }
