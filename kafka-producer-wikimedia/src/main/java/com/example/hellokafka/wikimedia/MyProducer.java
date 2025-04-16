@@ -2,6 +2,7 @@ package com.example.hellokafka.wikimedia;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,8 +30,23 @@ public class MyProducer {
     }
 
     void sendIt(String payload) {
-        log.info("Sending not implemented yet");
-        // producer.send(new ProducerRecord<>(topic, payload));
+        log.info("Sending to broker");
+        producer.send(new ProducerRecord<>(topic, payload), this::onCompletion);
+    }
+
+    private void onCompletion(RecordMetadata metadata, Exception e) {
+
+        if (e != null) {
+            log.error("Exception during send: {}", e.getMessage());
+            return;
+        }
+
+        log.info("Got metadata: Topic: {}, Partition: {}, Offset: {}, Timestamp: {}",
+                metadata.topic(),
+                metadata.partition(),
+                metadata.offset(),
+                metadata.timestamp()
+        );
     }
 
     void closeIt() {
