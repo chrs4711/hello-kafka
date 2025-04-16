@@ -11,6 +11,12 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Properties;
 
+/**
+ * If this one is run with multiple instances, we can watch the partitions get re-assigned to the individual
+ * consumers within the consumer group, e.g. using
+ * * kafka-consumer-groups ... --describe --group my-app
+ * * turning on 'info' logging for `org.apache.kafka.clients.consumer`
+ */
 public class GracefulConsumerDemo {
 
     private static final String groupId = "my-app";
@@ -59,7 +65,7 @@ public class GracefulConsumerDemo {
                 consumer.subscribe(List.of(topic));
 
                 while (true) {
-                    logger.info("polling ...");
+                    // logger.info("polling ...");
                     var records = consumer.poll(Duration.ofMillis(1000));
                     records.forEach(GracefulConsumerDemo::logMessage);
                 }
