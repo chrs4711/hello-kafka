@@ -1,7 +1,8 @@
 package com.example.hellokafka.opensearch;
 
 import org.apache.http.HttpHost;
-import org.opensearch.client.RequestOptions;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.opensearch.client.RestClient;
 import org.opensearch.client.RestHighLevelClient;
 import org.opensearch.client.indices.CreateIndexRequest;
@@ -11,7 +12,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Properties;
 
+import static org.apache.kafka.clients.consumer.ConsumerConfig.*;
 import static org.opensearch.client.RequestOptions.DEFAULT;
 
 public class OpenSearchConsumer {
@@ -24,19 +27,26 @@ public class OpenSearchConsumer {
     public static void main(String[] args) throws IOException {
 
         var client = createOpenSearchClient(connectionUri);
+        var consumer = createKafkaConsumer();
 
-        try (client) {
+        try (client; consumer) {
 
             createIndexIfNeeded(client);
 
+            // todo: consume and pump into the index
         }
+    }
 
+    private static KafkaConsumer<String, String> createKafkaConsumer() {
 
-        // create the kafka consumer
+        var properties = new Properties();
+        properties.setProperty(BOOTSTRAP_SERVERS_CONFIG, "127.0.0.1:9092");
+        properties.setProperty(KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        properties.setProperty(VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        properties.setProperty(GROUP_ID_CONFIG, "consumer-opensearch-demo");
+        properties.setProperty(AUTO_OFFSET_RESET_CONFIG, "latest");
 
-        // logic
-
-        // cleanup
+        return new KafkaConsumer<>(properties);
     }
 
     private static void createIndexIfNeeded(RestHighLevelClient client) throws IOException {
