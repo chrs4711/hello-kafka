@@ -39,6 +39,15 @@ public class MyProducer {
         properties.setProperty(KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.setProperty(VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
+        // `linger.ms` specifies how long the producer will wait to fill a batch.
+        properties.setProperty(LINGER_MS_CONFIG, "20");
+
+        // when `batch.size` is reached, the producer will send the batch
+        properties.setProperty(BATCH_SIZE_CONFIG, Integer.toString(32 * 1024));
+
+        // messages are compressed by the producer using the snappy algorithm
+        properties.setProperty(COMPRESSION_TYPE_CONFIG, "snappy");
+
         producer = new KafkaProducer<>(properties);
     }
 
