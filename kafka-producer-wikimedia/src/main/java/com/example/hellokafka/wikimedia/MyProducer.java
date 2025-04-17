@@ -11,6 +11,19 @@ import java.util.Properties;
 
 import static org.apache.kafka.clients.producer.ProducerConfig.*;
 
+/**
+ * Provides a method to send payload with a configured producer to a kafka topic.
+ * The producer by default has some "safe" settings, e.g.:
+ *
+ *  acks = -1
+ * 	delivery.timeout.ms = 120000
+ * 	enable.idempotence = true
+ * 	max.in.flight.requests.per.connection = 5
+ * 	retries = 2147483647
+ *
+ * 	Another important setting is `min.insync.replicas`, which is set on the broker
+ *
+ */
 public class MyProducer {
 
     private String bootstrapServers = "127.0.0.1:9092";
