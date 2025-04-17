@@ -1,5 +1,6 @@
 package com.example.hellokafka.opensearch;
 
+import com.google.gson.JsonParser;
 import org.apache.http.HttpHost;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -46,21 +47,38 @@ public class OpenSearchConsumer {
                 log.info("received {} records", count);
 
                 for (var record : records) {
-                    // send the record into the index!1
                     try {
-
+                        // We could receive the same message twice, so we need to introduce idempotency.
+                        // For that, we take advantage of the fact that opensearch makes no difference between
+                        // creation and update. As long as we use the same ID per document, we're good.
                         var indexRequest = new IndexRequest(INDEX_NAME)
-                                .source(record.value(), XContentType.JSON);
+                                .source(record.value(), XContentType.JSON)
+                                .id(extractId(record.value()));
+
                         var response = client.index(indexRequest, DEFAULT);
                         log.info("inserted into index with id {}", response.getId());
 
                     } catch (Exception e) {
                         log.error("saving to index failed: {}", e.getMessage());
                     }
-
                 }
             }
         }
+    }
+
+    /**
+     * We could also create our own id based on a combination of record.topic(), record.partition(), record.offset().
+     * However, our incoming data already has a key, so we take that!
+     */
+    private static String extractId(String json) {
+
+        return JsonParser.parseString(json)
+                .getAsJsonObject()
+                .get("meta")
+                .getAsJsonObject()
+                .get("id")
+                .getAsString();
+
     }
 
     private static void createIndexIfNeeded(RestHighLevelClient client) throws IOException {
