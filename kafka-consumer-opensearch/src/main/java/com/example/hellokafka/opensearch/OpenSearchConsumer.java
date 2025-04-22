@@ -42,6 +42,7 @@ public class OpenSearchConsumer {
             consumer.subscribe(Collections.singleton(TOPIC_NAME));
 
             while (true) {
+                // poll triggers the autocommit, unless we disable it
                 var records = consumer.poll(Duration.ofMillis(3000));
                 var count = records.count();
                 log.info("received {} records", count);
@@ -62,6 +63,14 @@ public class OpenSearchConsumer {
                         log.error("saving to index failed: {}", e.getMessage());
                     }
                 }
+
+                if (!records.isEmpty()) {
+                    // commit the offsets
+                    // as an alternativ, leave the default setting `enable.auto.commit` at true
+                    consumer.commitSync();
+                    log.info("offsets have been committed");
+                }
+
             }
         }
     }
@@ -101,6 +110,7 @@ public class OpenSearchConsumer {
         properties.setProperty(VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         properties.setProperty(GROUP_ID_CONFIG, "consumer-opensearch-demo");
         properties.setProperty(AUTO_OFFSET_RESET_CONFIG, "latest");
+        properties.setProperty(ENABLE_AUTO_COMMIT_CONFIG, "false"); // !! auto commit abschalten!1
 
         return new KafkaConsumer<>(properties);
     }
