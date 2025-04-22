@@ -4,6 +4,7 @@ import com.google.gson.JsonParser;
 import org.apache.http.HttpHost;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.opensearch.action.bulk.BulkRequest;
 import org.opensearch.action.index.IndexRequest;
 import org.opensearch.client.RestClient;
 import org.opensearch.client.RestHighLevelClient;
@@ -47,6 +48,8 @@ public class OpenSearchConsumer {
                 var count = records.count();
                 log.info("received {} records", count);
 
+                var bulkRequest = new BulkRequest();
+
                 for (var record : records) {
                     try {
                         // We could receive the same message twice, so we need to introduce idempotency.
@@ -56,17 +59,23 @@ public class OpenSearchConsumer {
                                 .source(record.value(), XContentType.JSON)
                                 .id(extractId(record.value()));
 
-                        var response = client.index(indexRequest, DEFAULT);
-                        log.info("inserted into index with id {}", response.getId());
+                        bulkRequest.add(indexRequest);
+
+                        // var response = client.index(indexRequest, DEFAULT);
+                        // log.info("inserted into index with id {}", response.getId());
 
                     } catch (Exception e) {
                         log.error("saving to index failed: {}", e.getMessage());
                     }
                 }
 
-                if (!records.isEmpty()) {
+                if (bulkRequest.numberOfActions() > 0) {
+                    // send everything in a bulk request
+                    var response = client.bulk(bulkRequest, DEFAULT);
+                    log.info("Inserted {} records", response.getItems().length);
                     // commit the offsets
-                    // as an alternativ, leave the default setting `enable.auto.commit` at true
+
+                    // as an alternative, leave the default setting `enable.auto.commit` at true
                     consumer.commitSync();
                     log.info("offsets have been committed");
                 }
